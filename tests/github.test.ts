@@ -8,6 +8,7 @@ import {
   lineKind,
   parseChangesRoute,
   parseDiffEntries,
+  parseReviewStatus,
   planBatches,
   statusFromChangeType,
 } from '../src/github/parse.ts';
@@ -129,6 +130,51 @@ describe('parseChangesRoute', () => {
     expect(
       ['ADDED', 'DELETED', 'REMOVED', 'RENAMED', 'COPIED', 'MODIFIED', 'CHANGED', undefined].map(statusFromChangeType),
     ).toEqual(['added', 'deleted', 'deleted', 'renamed', 'renamed', 'modified', 'modified', 'modified']);
+  });
+});
+
+// The conversation page's Reviewers sidebar, as GitHub renders it (trimmed).
+const reviewerHtml = (login: string, state: 'approved these changes' | 'requested changes', commitId: string) =>
+  `<div class="d-flex flex-items-center mb-2">
+    <a id="review-status-${login}" class="flex-order-1" href="/o/r/pull/7/files/${commitId}">
+      <span class="reviewers-status-icon text-center"><svg class="octicon octicon-check"></svg></span>
+    </a>
+    <tool-tip id="tooltip-1" for="review-status-${login}" popover="manual" data-direction="nw" data-type="label" data-view-component="true" class="sr-only position-absolute">${login} ${state}</tool-tip>
+  </div>`;
+const conversationHtml = (allowed: string[], reviewers: string, viewer = 'roger') =>
+  `<html><meta name="user-login" content="${viewer}"><script type="application/json" data-target="react-app.embeddedData">${JSON.stringify(
+    {
+      payload: {
+        pullRequestsLayoutRoute: { pullRequest: { headSha: HEAD, viewerAllowedNonCommentReviewTypes: allowed } },
+      },
+    },
+  )}</script>${reviewers}</html>`;
+
+describe('parseReviewStatus', () => {
+  test('reads who approved, at which commit, and whether the viewer may approve', () => {
+    const status = parseReviewStatus(
+      conversationHtml(
+        ['APPROVE', 'REQUEST_CHANGES'],
+        reviewerHtml('mari', 'approved these changes', HEAD) +
+          reviewerHtml('Roger', 'approved these changes', BASE) +
+          reviewerHtml('jaan', 'requested changes', HEAD),
+      ),
+    );
+    expect(status).toEqual({
+      canApprove: true,
+      headCommitId: HEAD,
+      approvals: [
+        { login: 'mari', isViewer: false, stale: false },
+        { login: 'Roger', isViewer: true, stale: true },
+      ],
+    });
+  });
+  test('the author may not approve their own pull request', () => {
+    expect(parseReviewStatus(conversationHtml([], '')).canApprove).toBe(false);
+  });
+  test('throws when the layout payload is missing', () => {
+    expect(() => parseReviewStatus('<html><meta name="user-login" content=""></html>')).toThrow(NotLoggedInError);
+    expect(() => parseReviewStatus('<html><meta name="user-login" content="roger"></html>')).toThrow(GitHubShapeError);
   });
 });
 
@@ -267,6 +313,24 @@ describe('GitHubSessionSource', () => {
     await expect(
       source.setViewed({ ...reference, title: '', range: null, headCommitId: null, baseCommitId: null }, 'x', true),
     ).rejects.toThrow(/422/);
+  });
+  test("approve submits the review the way GitHub's own Approve does", async () => {
+    const calls: [string, RequestInit][] = [];
+    const source = new GitHubSessionSource(reference, {
+      fetch: async (url: string, init?: RequestInit) => {
+        calls.push([url, init!]);
+        return new Response('{}', { status: calls.length === 1 ? 200 : 422 });
+      },
+      background: async () => ({ ok: true, status: 200, text: '' }),
+      nonce: () => 'n1',
+    });
+    const pullRequest = { ...reference, title: '', range: null, headCommitId: HEAD, baseCommitId: BASE };
+    await source.approve(pullRequest, HEAD);
+    expect(calls[0]![0]).toBe('https://github.com/o/r/pull/7/page_data/submit_review');
+    expect(calls[0]![1].method).toBe('PUT');
+    expect(JSON.parse(String(calls[0]![1].body))).toEqual({ body: '', event: 'approve', headSha: HEAD });
+    expect((calls[0]![1].headers as Record<string, string>)['X-Fetch-Nonce']).toBe('n1');
+    await expect(source.approve(pullRequest, HEAD)).rejects.toThrow(/approving: HTTP 422/);
   });
   test('loadFileContent uses per-file oids and old path for the old side', async () => {
     const urls: string[] = [];

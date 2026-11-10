@@ -8,6 +8,7 @@ import type {
   PullRequestOverview,
   PullRequestReference,
   ReviewSource,
+  ReviewStatus,
 } from '../shared/types.ts';
 import { parseUnifiedDiff } from './rawDiff.ts';
 import {
@@ -15,6 +16,7 @@ import {
   GitHubShapeError,
   parseChangesRoute,
   parseDiffEntries,
+  parseReviewStatus,
   planBatches,
   type EntryDetails,
 } from './parse.ts';
@@ -122,6 +124,26 @@ export class GitHubSessionSource implements ReviewSource {
       body: JSON.stringify(viewed ? { path, viewed: 'viewed' } : { path, _method: 'delete' }),
     });
     if (!response.ok) throw new HttpError(response.status, viewed ? 'marking viewed' : 'unmarking viewed');
+  }
+
+  async loadReviewStatus(pullRequest: PullRequest): Promise<ReviewStatus> {
+    const response = await this.dependencies.fetch(this.baseUrl(pullRequest), {
+      credentials: 'include',
+      headers: { Accept: 'text/html' },
+    });
+    if (!response.ok) throw new HttpError(response.status, 'loading the pull request conversation page');
+    return parseReviewStatus(await response.text());
+  }
+
+  /** The request GitHub's own "Review changes → Approve" sends. */
+  async approve(pullRequest: PullRequest, headCommitId: string): Promise<void> {
+    const response = await this.dependencies.fetch(`${this.baseUrl(pullRequest)}/page_data/submit_review`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: this.headers(),
+      body: JSON.stringify({ body: '', event: 'approve', headSha: headCommitId }),
+    });
+    if (!response.ok) throw new HttpError(response.status, 'approving');
   }
 
   /** URL of a file as it was at the base ("old") or is at the head ("new") of the pull request. */

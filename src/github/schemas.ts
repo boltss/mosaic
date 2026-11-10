@@ -28,6 +28,19 @@ export const changesPageSchema = zod.looseObject({
   payload: zod.looseObject({ pullRequestsChangesRoute: changesRouteSchema }),
 });
 
+/** The pull request layout every pull request page embeds (conversation, changes, …). */
+export const layoutPageSchema = zod.looseObject({
+  payload: zod.looseObject({
+    pullRequestsLayoutRoute: zod.looseObject({
+      pullRequest: zod.looseObject({
+        headSha: zod.string().nullish(),
+        /** "APPROVE" and "REQUEST_CHANGES" when the viewer may give them. */
+        viewerAllowedNonCommentReviewTypes: zod.array(zod.string()),
+      }),
+    }),
+  }),
+});
+
 const treeEntrySchema = zod.looseObject({
   path: zod.string().nullish(),
   isGenerated: zod.boolean().nullish(),

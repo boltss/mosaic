@@ -1,4 +1,4 @@
-// Dev harness: the real Mosaic UI against a fake pull request. ?theme=light ?fail=1 ?latency=0
+// Dev harness: the real Mosaic UI against a fake pull request. ?theme=light ?fail=1 ?latency=0 ?approvedBy=mari,jaan ?author=1 ?failApprove=1
 import { memoryStore, type PullRequestRecord } from '../src/metrics/metrics.ts';
 import { mountMosaic } from '../src/ui/entry.tsx';
 import { fixtureSource } from './fixture.ts';
@@ -7,6 +7,9 @@ const parameters = new URLSearchParams(location.search);
 const source = fixtureSource({
   latency: Number(parameters.getAll('latency').at(-1) ?? 250),
   failViewed: parameters.has('fail'),
+  failApprove: parameters.has('failApprove'),
+  approvedBy: parameters.get('approvedBy')?.split(',') ?? [],
+  canApprove: !parameters.has('author'),
 });
 // Seed three pull requests measured in GitHub's own view so the "time saved" baseline is ready.
 const DAY_MILLISECONDS = 86_400_000;
@@ -42,6 +45,11 @@ const open = () => {
     onClose: () => {
       unmount();
       reopenButton.hidden = false;
+    },
+    onApproved: () => {
+      unmount();
+      reopenButton.hidden = false;
+      console.log(`approved ${source.approvedCommits.at(-1)}; the extension would now open the conversation`);
     },
   });
 };

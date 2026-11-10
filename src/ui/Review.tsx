@@ -14,7 +14,7 @@ import { classNames } from './components/classNames.ts';
 import { EmptyState, EmptyStateText } from './components/EmptyState.tsx';
 import { Kbd } from './components/Kbd.tsx';
 import { Toast, Toaster } from './components/Toast.tsx';
-import { useReviewData, useViewed, type Classified } from './data.ts';
+import { useApproval, useReviewData, useViewed, type Classified } from './data.ts';
 import { MosaicSession } from './metricsStore.ts';
 import { DiffPanel } from './Panel.tsx';
 import {
@@ -46,6 +46,8 @@ export interface ReviewProps {
   source: ReviewSource;
   store: KeyValueStore;
   onClose: () => void;
+  /** After GitHub accepted the approval: leave Mosaic for the pull request's conversation. */
+  onApproved: () => void;
 }
 
 const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -59,7 +61,7 @@ function groupByDirectory(files: FileSummary[]): Map<string, FileSummary[]> {
   return byDirectory;
 }
 
-export function Review({ source, store, onClose }: ReviewProps) {
+export function Review({ source, store, onClose, onApproved }: ReviewProps) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   useEffect(() => {
     void store.get(SETTINGS_KEY).then(saved => setSettings(settingsSchema.parse(saved)));
@@ -122,6 +124,19 @@ export function Review({ source, store, onClose }: ReviewProps) {
           action: { label: 'Undo', run: undo },
         });
     },
+  });
+
+  const approval = useApproval(source, pullRequest, {
+    onApproved,
+    onFailed: (error, retry) =>
+      showToast(
+        {
+          text: `GitHub rejected the approval (${error.message})`,
+          error: true,
+          action: { label: 'Retry', run: retry },
+        },
+        15_000,
+      ),
   });
 
   // ---- UI state ----
@@ -480,6 +495,7 @@ export function Review({ source, store, onClose }: ReviewProps) {
           needingReview,
           loadedFiles: data.allLoaded ? null : data.loadedCount,
         }}
+        approval={{ ...approval, onApprove: approval.approve }}
         timeChip={session && <TimeChip session={session} onClick={() => setSummaryOpen(open => !open)} />}
         filter={filter}
         onFilterChange={setFilter}

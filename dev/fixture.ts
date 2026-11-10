@@ -334,8 +334,14 @@ export function buildFixture() {
 const sleep = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 export function fixtureSource(
-  options: { latency?: number; failViewed?: boolean } = {},
-): ReviewSource & { viewedLog: string[] } {
+  options: {
+    latency?: number;
+    failViewed?: boolean;
+    failApprove?: boolean;
+    approvedBy?: string[];
+    canApprove?: boolean;
+  } = {},
+): ReviewSource & { viewedLog: string[]; approvedCommits: string[] } {
   const { specs, files, diffs } = buildFixture();
   const viewed = new Map(files.map(file => [file.path, file.viewed]));
   const latency = options.latency ?? 250;
@@ -349,8 +355,10 @@ export function fixtureSource(
     baseCommitId: 'e'.repeat(40),
   };
   const viewedLog: string[] = [];
+  const approvedCommits: string[] = [];
   return {
     viewedLog,
+    approvedCommits,
     async loadPullRequest() {
       await sleep(latency);
       return { pullRequest, files: files.map(file => ({ ...file, viewed: viewed.get(file.path)! })) };
@@ -379,6 +387,22 @@ export function fixtureSource(
       if (options.failViewed && path.includes('Dashboard')) throw new Error('HTTP 422');
       viewed.set(path, isViewed);
       viewedLog.push(`${isViewed ? '+' : '-'}${path}`);
+    },
+    async loadReviewStatus() {
+      await sleep(latency);
+      return {
+        canApprove: options.canApprove ?? true,
+        headCommitId: pullRequest.headCommitId,
+        approvals: [
+          ...(options.approvedBy ?? []).map(login => ({ login, isViewer: false, stale: false })),
+          ...(approvedCommits.length ? [{ login: 'you', isViewer: true, stale: false }] : []),
+        ],
+      };
+    },
+    async approve(_pullRequest, headCommitId) {
+      await sleep(latency * 2);
+      if (options.failApprove) throw new Error('approving: HTTP 422');
+      approvedCommits.push(headCommitId);
     },
     async loadFileContent(_pullRequest, path, side) {
       await sleep(latency);

@@ -43,6 +43,7 @@ export interface MountOptions {
   store: KeyValueStore;
   theme: 'light' | 'dark';
   onClose: () => void;
+  onApproved: () => void;
 }
 
 /** Mounts Mosaic into `host` (inside a shadow root so GitHub's CSS can't leak in). Returns an unmount function. */
@@ -63,7 +64,12 @@ export function mountMosaic(host: HTMLElement, options: MountOptions): () => voi
   root.render(
     <RootBoundary onClose={options.onClose}>
       <QueryClientProvider client={client}>
-        <Review source={options.source} store={options.store} onClose={options.onClose} />
+        <Review
+          source={options.source}
+          store={options.store}
+          onClose={options.onClose}
+          onApproved={options.onApproved}
+        />
       </QueryClientProvider>
     </RootBoundary>,
   );
