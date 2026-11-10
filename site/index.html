@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mosaic — review huge GitHub pull requests</title>
+    <meta
+      name="description"
+      content="A free, open-source Chrome extension that shows every file of a GitHub pull request at once and lets you approve low-risk files in bulk."
+    />
+    <link rel="icon" href="icon.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --background: #0d1117;
+        --surface: #161b22;
+        --border: #30363d;
+        --foreground: #e6edf3;
+        --muted: #9198a1;
+        --primary: #4493f8;
+        --approve: #238636;
+        --approve-hover: #2ea043;
+        --code: #6e768166;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          color-scheme: light;
+          --background: #ffffff;
+          --surface: #f6f8fa;
+          --border: #d1d9e0;
+          --foreground: #1f2328;
+          --muted: #59636e;
+          --primary: #0969da;
+          --approve: #1f883d;
+          --approve-hover: #1a7f37;
+          --code: #818b981f;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--foreground);
+        font:
+          16px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          'Noto Sans',
+          Helvetica,
+          Arial,
+          sans-serif;
+      }
+      a {
+        color: var(--primary);
+      }
+      code,
+      kbd {
+        font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: 0.875em;
+        background: var(--code);
+        border-radius: 6px;
+        padding: 0.15em 0.4em;
+      }
+      kbd {
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 18px;
+        color: inherit;
+        text-decoration: none;
+      }
+      .brand img {
+        width: 28px;
+        height: 28px;
+      }
+      .hero {
+        text-align: center;
+        padding: 48px 0 32px;
+      }
+      h1 {
+        font-size: clamp(32px, 5vw, 52px);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin: 0 auto 16px;
+        max-width: 760px;
+      }
+      .lead {
+        color: var(--muted);
+        font-size: 19px;
+        max-width: 620px;
+        margin: 0 auto 32px;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 22px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--foreground);
+        font: inherit;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .button.primary {
+        background: var(--approve);
+        border-color: var(--approve);
+        color: #fff;
+      }
+      .button.primary:hover {
+        background: var(--approve-hover);
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 14px;
+        margin-top: 14px;
+      }
+      .notice {
+        display: none;
+        max-width: 620px;
+        margin: 20px auto 0;
+        padding: 10px 14px;
+        border: 1px solid #d29922;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+      .shot {
+        margin: 40px 0 0;
+      }
+      .shot img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 24px 64px #0006;
+      }
+      section {
+        padding: 56px 0 8px;
+      }
+      h2 {
+        font-size: 28px;
+        letter-spacing: -0.01em;
+        margin: 0 0 8px;
+      }
+      .section-lead {
+        color: var(--muted);
+        margin: 0 0 28px;
+        max-width: 680px;
+      }
+      ol.steps {
+        list-style: none;
+        counter-reset: step;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+      }
+      ol.steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 14px;
+        align-items: start;
+        padding: 16px 18px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      ol.steps li::before {
+        content: counter(step);
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--approve);
+        color: #fff;
+        font-weight: 600;
+      }
+      ol.steps strong {
+        display: block;
+      }
+      ol.steps p {
+        margin: 2px 0 0;
+        color: var(--muted);
+      }
+      .copy {
+        margin-left: 6px;
+        padding: 2px 10px;
+        font-size: 13px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--background);
+        color: var(--foreground);
+        cursor: pointer;
+      }
+      .callout {
+        margin-top: 16px;
+        padding: 14px 18px;
+        border-left: 3px solid var(--primary);
+        background: var(--surface);
+        border-radius: 0 8px 8px 0;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 15px;
+      }
+      footer {
+        margin-top: 64px;
+        padding: 24px 0 40px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <a class="brand" href="./"><img src="icon.png" alt="" />Mosaic</a>
+        <a href="https://github.com/boltss/mosaic">GitHub</a>
+      </header>
+
+      <div class="hero">
+        <h1>Review huge GitHub pull requests on one screen</h1>
+        <p class="lead">
+          Every changed file at once, low-risk files sorted into groups you can approve in bulk, and GitHub's “Viewed”
+          checkboxes kept in sync.
+        </p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/boltss/mosaic/releases/latest/download/mosaic.zip">
+            Download for Chrome
+          </a>
+          <a class="button" href="#install">How to install</a>
+        </div>
+        <p class="meta"><span id="version">Latest release</span> · free and open source · Chrome, Edge, Brave, Arc</p>
+        <p class="notice" id="browser-notice">
+          Mosaic needs a Chromium-based browser such as Chrome, Edge, Brave or Arc. It doesn't run in Firefox or Safari.
+        </p>
+      </div>
+
+      <figure class="shot">
+        <picture>
+          <source srcset="screenshot-light.jpg" media="(prefers-color-scheme: light)" />
+          <img
+            src="screenshot-dark.jpg"
+            width="1600"
+            height="1000"
+            alt="Mosaic showing a 101-file pull request: a sidebar of low-risk groups with ‘approve all’ buttons, and tiles with each file's diff"
+          />
+        </picture>
+      </figure>
+
+      <section id="install">
+        <h2>Install</h2>
+        <p class="section-lead">
+          Mosaic isn't in the Chrome Web Store yet, so Chrome can't install it in one click. Loading it yourself takes
+          four steps and about a minute.
+        </p>
+        <ol class="steps">
+          <li>
+            <div>
+              <strong
+                ><a href="https://github.com/boltss/mosaic/releases/latest/download/mosaic.zip">Download mosaic.zip</a>
+                and unzip it</strong
+              >
+              <p>Put the folder somewhere permanent. Chrome runs Mosaic from it, so don't delete it afterwards.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong
+                >Open <code>chrome://extensions</code
+                ><button class="copy" type="button" data-copy="chrome://extensions">Copy</button></strong
+              >
+              <p>
+                Paste it into the address bar. Browsers don't let web pages link there directly. In Edge it's
+                <code>edge://extensions</code>.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Turn on Developer mode</strong>
+              <p>The switch is in the top-right corner of the extensions page.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click “Load unpacked” and choose the unzipped folder</strong>
+              <p>Choose the folder that contains <code>manifest.json</code>.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="callout">
+          Then open any pull request on github.com and click the <strong>Mosaic</strong> button in the bottom-right
+          corner, or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd>.
+        </div>
+
+        <h3 style="margin: 32px 0 6px">Updating</h3>
+        <p class="section-lead" style="margin-bottom: 0">
+          Extensions installed this way don't update themselves. To update, unzip the
+          <a href="https://github.com/boltss/mosaic/releases/latest/download/mosaic.zip">latest mosaic.zip</a>
+          into the <em>same</em> folder, replacing the old files, then click the reload button ↻ on Mosaic's card in
+          <code>chrome://extensions</code>. Keeping the same folder keeps your settings and time-saved stats.
+          <a href="https://github.com/boltss/mosaic/releases">All releases</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>What it does</h2>
+        <p class="section-lead">Made for pull requests too big to review one file at a time.</p>
+        <div class="grid">
+          <div class="card">
+            <h3>Everything loads at once</h3>
+            <p>Every file's diff is shown in a grid of tiles. No lazy loading and no clicking from file to file.</p>
+          </div>
+          <div class="card">
+            <h3>Approve low-risk files in bulk</h3>
+            <p>
+              Renamed, deleted, generated, lockfile, snapshot, translation, whitespace-only and identical-edit files are
+              grouped, and each group can be marked viewed with one click, with undo.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Tests as a list of names</h3>
+            <p>Test files show one row per test with its line counts. Click a row to see its code.</p>
+          </div>
+          <div class="card">
+            <h3>Markdown preview</h3>
+            <p>
+              Rendered docs with changes highlighted, plus warnings for edits that don't show when rendered, such as
+              changed link targets or HTML comments.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Synced with GitHub</h3>
+            <p>Ticking a file in Mosaic marks it viewed on GitHub, and the other way round.</p>
+          </div>
+          <div class="card">
+            <h3>Keyboard first</h3>
+            <p>
+              <kbd>j</kbd>/<kbd>k</kbd> to move between files, <kbd>x</kbd> to mark viewed, <kbd>/</kbd> to filter and
+              <kbd>v</kbd> to hide viewed files.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Privacy</h2>
+        <p class="section-lead">
+          Mosaic has no server, no analytics and no tokens. It talks only to github.com, using the session you're
+          already signed in with, and everything it stores stays in your browser. The source is on
+          <a href="https://github.com/boltss/mosaic">GitHub</a> for anyone to check.
+        </p>
+      </section>
+
+      <section>
+        <h2>Contribute</h2>
+        <p class="section-lead">
+          Found a bug or have an idea?
+          <a href="https://github.com/boltss/mosaic/issues">Open an issue</a> or send a pull request. The
+          <a href="https://github.com/boltss/mosaic#develop">README</a> explains how to build and test it.
+        </p>
+      </section>
+
+      <footer>Mosaic is an independent project and isn't affiliated with GitHub.</footer>
+    </div>
+
+    <script>
+      // Only Chromium browsers expose userAgentData; elsewhere the extension can't be installed.
+      if (!('userAgentData' in navigator)) document.getElementById('browser-notice').style.display = 'block';
+
+      for (const button of document.querySelectorAll('[data-copy]'))
+        button.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(button.dataset.copy);
+            button.textContent = 'Copied';
+          } catch {
+            button.textContent = 'Select and copy';
+          }
+          setTimeout(() => (button.textContent = 'Copy'), 2000);
+        });
+
+      fetch('https://api.github.com/repos/boltss/mosaic/releases/latest')
+        .then(response => (response.ok ? response.json() : Promise.reject()))
+        .then(release => {
+          const date = new Date(release.published_at).toLocaleDateString(undefined, { dateStyle: 'medium' });
+          document.getElementById('version').textContent = `${release.tag_name}, released ${date}`;
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+{
+  "name": "mosaic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension: review huge GitHub pull requests as a tiled, bulk-approvable mosaic",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "bun run build.ts",
+    "package": "bun run build.ts && rm -f mosaic.zip && cd dist && zip -qr ../mosaic.zip . -x '*.map'",
+    "dev": "bun run build.ts --watch",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "harness": "bun run build.ts && bun run dev/serve.ts",
+    "e2e": "bun e2e/harness.e2e.ts",
+    "icons": "bun tools/icons.ts",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "check": "oxlint && oxfmt --check && tsc --noEmit && bun test"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "diff": "^9.0.0",
+    "dompurify": "^3.4.16",
+    "markdown-it": "^15.0.2",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwind-merge": "^3.7.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@types/bun": "^1.4.2",
+    "@types/chrome": "^0.3.4",
+    "@types/markdown-it": "^14.2.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint-plugin-unicorn": "^77.0.0",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "playwright-core": "^1.64.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
+  }
+}

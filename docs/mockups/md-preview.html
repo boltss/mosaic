@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Mosaic — markdown preview tile mockup</title>
+<style>
+  html, body { margin: 0; }
+  body { font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .screen { background: #010409; padding: 16px; border-radius: var(--radius, 10px); display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+  .tile { border: 1px solid #30363d; border-radius: 8px; background: #0d1117; color: #e6edf3; overflow: hidden; }
+  .th { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #161b22; font-size: 12px; border-bottom: 1px solid #21262d; }
+  .st { font: 600 10px ui-monospace, monospace; color: #d29922; }
+  .fn { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fn span { color: #8b949e; font-weight: 400; }
+  .nums { font: 11px ui-monospace, monospace; } .a { color: #3fb950; } .d { color: #f85149; margin-left: 3px; }
+  .seg { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  .seg button { background: none; border: 0; color: #8b949e; font: 11px -apple-system, sans-serif; padding: 2px 8px; cursor: pointer; }
+  .seg button.on { background: #30363d; color: #e6edf3; }
+  .legend { display: flex; gap: 12px; padding: 6px 12px; font-size: 11px; color: #8b949e; border-bottom: 1px solid #21262d; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
+
+  /* preview */
+  .md { padding: 6px 14px 12px; }
+  .md h1 { font-size: 20px; margin: 10px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #21262d; }
+  .md h2 { font-size: 16px; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid #21262d; }
+  .md p, .md ul { margin: 6px 0; }
+  .md ul { padding-left: 22px; }
+  .md code { font: 12px ui-monospace, monospace; background: #262c36; padding: 1px 5px; border-radius: 5px; }
+  .md a { color: #4493f8; }
+  .blk { position: relative; margin: 0 -14px; padding: 1px 14px 1px 14px; border-left: 3px solid transparent; }
+  .blk.add { border-left-color: #3fb950; background: rgba(46,160,67,.10); }
+  .blk.mod { border-left-color: #d29922; background: rgba(210,153,34,.08); }
+  .blk.del { border-left-color: #f85149; background: rgba(248,81,73,.08); color: #ffa198; }
+  .blk.del > :not(.tag) { text-decoration: line-through; text-decoration-color: #f8514999; opacity: .8; }
+  ins { text-decoration: none; background: rgba(46,160,67,.35); border-radius: 3px; padding: 0 1px; color: #aff5b4; }
+  del { background: rgba(248,81,73,.3); border-radius: 3px; padding: 0 1px; color: #ffa198; }
+  .fold { margin: 6px -14px; padding: 2px 14px; background: #121d2f; color: #6e9bd6; font-size: 11px; cursor: pointer; }
+  .badge { display: inline-block; gap: 6px; margin: 4px 0; font-size: 11px; color: #d29922; border: 1px solid #d2992266; border-radius: 6px; padding: 2px 8px; background: #d2992212; cursor: pointer; }
+  .badge code { font-size: 10.5px; }
+  .tag { position: absolute; right: 8px; top: 4px; font: 10px -apple-system, sans-serif; color: #8b949e; }
+
+  /* code view */
+  .code { display: none; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 0; }
+  .ln { white-space: pre-wrap; padding: 0 8px 0 18px; text-indent: -10px; color: #8b949e; }
+  .ln.add { background: rgba(46,160,67,.15); color: #aff5b4; }
+  .ln.del { background: rgba(248,81,73,.15); color: #ffdcd7; }
+  .tile.as-code .md, .tile.as-code .legend { display: none; }
+  .tile.as-code .code { display: block; }
+  .note { color: #8b949e; font-size: 12px; padding: 0 2px; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="tile" id="t1">
+    <div class="th"><span class="st">M</span><span class="fn"><span>./</span>AGENTS.md</span>
+      <div class="seg"><button class="on" data-v="md">Preview</button><button data-v="code">Code</button></div>
+      <span class="nums"><span class="a">+9</span><span class="d">−5</span></span></div>
+    <div class="legend"><span><i style="background:#3fb950"></i>added</span><span><i style="background:#d29922"></i>changed</span><span><i style="background:#f85149"></i>removed</span><span style="margin-left:auto"><kbd>p</kbd> toggle</span></div>
+    <div class="md">
+      <h1>Agents</h1>
+      <div class="fold">⋯ 2 unchanged sections — expand</div>
+      <h2>Localization</h2>
+      <div class="blk mod"><p>All user-facing strings go through <code>t()</code><ins> and must have an Estonian translation</ins>.</p></div>
+      <div class="blk mod"><ul><li>Add keys to <code>en.json</code> <del>first</del><ins>and <code>et.json</code></ins></li><li>Run <code>bun run i18n:check</code></li></ul></div>
+      <div class="blk mod"><p>Follow the <a href="#">style guide</a> for tone.</p>
+        <span class="badge" title="Rendered text is identical — the change is only visible in the source">⚠ hidden change: link target <code>docs/style.md</code> → <code>docs/STYLE.md</code></span></div>
+      <div class="blk add"><span class="tag">new section</span><h2>Commits</h2>
+        <p>Use conventional commits: <code>feat:</code>, <code>fix:</code>, <code>chore:</code>.</p>
+        <ul><li>One logical change per commit</li><li>Never commit <code>.env</code> files</li></ul></div>
+      <div class="blk del"><span class="tag">removed section</span><h2>Testing</h2><p>Run <code>bun test</code> before pushing.</p></div>
+      <div class="blk mod"><span class="badge">⚠ hidden change: HTML comment edited <code>&lt;!-- owner: @roger --&gt;</code></span></div>
+    </div>
+    <div class="code">
+      <div class="ln"> ## Localization</div>
+      <div class="ln del">-All user-facing strings go through `t()`.</div>
+      <div class="ln add">+All user-facing strings go through `t()` and must have an Estonian translation.</div>
+      <div class="ln del">-- Add keys to `en.json` first</div>
+      <div class="ln add">+- Add keys to `en.json` and `et.json`</div>
+      <div class="ln"> - Run `bun run i18n:check`</div>
+      <div class="ln del">-Follow the [style guide](docs/style.md) for tone.</div>
+      <div class="ln add">+Follow the [style guide](docs/STYLE.md) for tone.</div>
+      <div class="ln"> </div>
+      <div class="ln del">-## Testing</div>
+      <div class="ln del">-Run `bun test` before pushing.</div>
+      <div class="ln add">+## Commits</div>
+      <div class="ln add">+Use conventional commits: `feat:`, `fix:`, `chore:`.</div>
+      <div class="ln add">+- One logical change per commit</div>
+      <div class="ln add">+- Never commit `.env` files</div>
+      <div class="ln"> </div>
+      <div class="ln del">-&lt;!-- owner: @alice --&gt;</div>
+      <div class="ln add">+&lt;!-- owner: @roger --&gt;</div>
+    </div>
+  </div>
+
+  <div class="tile" id="t2">
+    <div class="th"><span class="st" style="color:#3fb950">A</span><span class="fn"><span>.claude/skills/localization/</span>SKILL.md</span>
+      <div class="seg"><button class="on" data-v="md">Preview</button><button data-v="code">Code</button></div>
+      <span class="nums"><span class="a">+14</span><span class="d">−0</span></span></div>
+    <div class="legend"><span>new file · rendered in full</span><span style="margin-left:auto">front matter shown as a table</span></div>
+    <div class="md">
+      <table style="font-size:11.5px;border-collapse:collapse;margin:8px 0;color:#8b949e">
+        <tr><td style="padding:1px 10px 1px 0">name</td><td style="color:#e6edf3">localization</td></tr>
+        <tr><td style="padding:1px 10px 1px 0">description</td><td style="color:#e6edf3">Use when adding or editing user-facing copy</td></tr></table>
+      <h1>Localization skill</h1>
+      <p>Every string shown to users must live in <code>locales/*.json</code>.</p>
+      <ol style="padding-left:22px;margin:6px 0"><li>Add the key to <code>en.json</code></li><li>Add the Estonian text to <code>et.json</code></li><li>Run <code>bun run i18n:check</code></li></ol>
+      <p class="note">New files don't get green backgrounds on every block — the “A” badge says it all, and it keeps long docs readable.</p>
+    </div>
+    <div class="code">
+      <div class="ln add">+---</div><div class="ln add">+name: localization</div><div class="ln add">+description: Use when adding or editing user-facing copy</div><div class="ln add">+---</div>
+      <div class="ln add">+# Localization skill</div><div class="ln add">+Every string shown to users must live in `locales/*.json`.</div>
+      <div class="ln add">+1. Add the key to `en.json`</div><div class="ln add">+2. Add the Estonian text to `et.json`</div><div class="ln add">+3. Run `bun run i18n:check`</div>
+    </div>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+    const tile = b.closest('.tile');
+    tile.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+    tile.classList.toggle('as-code', b.dataset.v === 'code');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.e2e-profile/
+spike/
+*.log
+.DS_Store
+dist-dev/
+mosaic.zip

@@ -1,0 +1,584 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PR Mosaic — review view mockup</title>
+<style>
+  html, body { margin: 0; }
+  body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .screen { background: #010409; padding: 16px; border-radius: var(--radius, 10px); height: 820px; box-sizing: border-box; }
+  .standalone .screen { padding: 0; border-radius: 0; }
+  .standalone .app { border: 0; border-radius: 0; }
+  .app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; position: relative; }
+  button, input { font: inherit; color: inherit; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 14px; background: #161b22; border-bottom: 1px solid #30363d; }
+  .pr { display: flex; align-items: baseline; gap: 8px; min-width: 0; flex: 1 1 300px; }
+  .logo { font-weight: 700; color: #2f81f7; white-space: nowrap; }
+  .repo { color: #8b949e; white-space: nowrap; }
+  .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .prog { display: flex; align-items: center; gap: 10px; flex: 1 1 240px; }
+  .bar { flex: 1; height: 8px; background: #21262d; border-radius: 99px; overflow: hidden; min-width: 70px; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #238636, #3fb950); transition: width .25s; }
+  .prog span { color: #8b949e; white-space: nowrap; font-size: 12px; }
+  .prog b { color: #e6edf3; }
+  .timechip { display: flex; align-items: center; gap: 6px; background: #0d1117; border: 1px solid #30363d; border-radius: 99px; padding: 2px 10px; cursor: pointer; font-size: 12px; white-space: nowrap; color: #8b949e; }
+  .timechip b { color: #e6edf3; font-variant-numeric: tabular-nums; }
+  .timechip .sv { color: #3fb950; font-weight: 600; }
+  .timechip:hover { border-color: #3fb950; }
+  .ctrls { display: flex; align-items: center; gap: 10px; }
+  .ctrls input[type=search] { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 4px 8px; width: 140px; }
+  .seg { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; }
+  .seg button { background: none; border: 0; padding: 3px 9px; cursor: pointer; color: #8b949e; }
+  .seg button.on { background: #30363d; color: #e6edf3; }
+  .ctrls label { color: #8b949e; white-space: nowrap; cursor: pointer; font-size: 12px; }
+
+  .body { display: grid; grid-template-columns: 250px 1fr; min-height: 0; }
+  .side { border-right: 1px solid #30363d; overflow: auto; padding: 10px 0 20px; }
+  .main { overflow: auto; padding: 0 14px 30px; }
+  @media (max-width: 760px) { .body { grid-template-columns: 190px 1fr; } .ctrls label { display: none; } }
+
+  .sh { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #8b949e; padding: 10px 14px 4px; }
+  .bk { display: flex; align-items: center; gap: 8px; padding: 4px 10px 4px 14px; cursor: pointer; }
+  .bk:hover { background: #161b22; }
+  .bk.on { background: #1f2a3a; box-shadow: inset 2px 0 #2f81f7; }
+  .bk .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .bk .lbl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bk .cnt { color: #8b949e; font-size: 12px; }
+  .bk .cnt.done { color: #3fb950; }
+  .bk .all { border: 1px solid #30363d; background: #21262d; border-radius: 5px; font-size: 11px; padding: 0 6px; cursor: pointer; color: #8b949e; }
+  .bk .all:hover { color: #3fb950; border-color: #3fb950; }
+  .v2 { font-size: 9px; border: 1px solid #a371f7; color: #a371f7; border-radius: 4px; padding: 0 4px; margin-left: 4px; vertical-align: 1px; }
+
+  .tn { display: flex; align-items: center; gap: 6px; padding: 2px 10px 2px 0; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .tn:hover { background: #161b22; }
+  .tn .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .tn.full .nm { color: #6e7681; text-decoration: line-through; text-decoration-color: #3fb95088; }
+  .tn .mini-bar { width: 34px; height: 4px; background: #21262d; border-radius: 9px; overflow: hidden; flex: none; }
+  .tn .mini-bar i { display: block; height: 100%; background: #3fb950; }
+  .tn .c { color: #6e7681; font-size: 11px; width: 26px; text-align: right; flex: none; }
+  input[type=checkbox] { accent-color: #3fb950; margin: 0; cursor: pointer; }
+
+  .sec { margin-top: 14px; }
+  .sec-h { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; padding: 8px 4px; background: #0d1117ee; backdrop-filter: blur(4px); border-bottom: 1px solid #21262d; }
+  .sec-h .p { font-weight: 600; font-size: 12.5px; }
+  .sec-h .p span { color: #8b949e; font-weight: 400; }
+  .sec-h .m { color: #8b949e; font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .a { color: #3fb950; } .d { color: #f85149; }
+  .sec.done .sec-h .p { color: #6e7681; }
+
+  /* masonry: rows of 2px, tiles span their measured height */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile, 280px), 1fr)); grid-auto-rows: 2px; column-gap: 8px; padding-top: 8px; }
+  .tile { align-self: start; border: 1px solid #30363d; border-radius: 6px; background: #0d1117; overflow: hidden; cursor: pointer; transition: opacity .15s; }
+  .tile.wide { grid-column: 1 / -1; }
+  .tile:hover { border-color: #484f58; }
+  .tile.focus { border-color: #2f81f7; box-shadow: 0 0 0 1px #2f81f7; }
+  .tile.viewed { opacity: .45; }
+  .tile.viewed .mini { display: none; }
+  .tile.viewed .fn { text-decoration: line-through; text-decoration-color: #3fb95099; }
+  .th { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: #161b22; font-size: 12px; }
+  .st { font: 600 10px ui-monospace, monospace; width: 14px; text-align: center; flex: none; }
+  .st-A { color: #3fb950; } .st-M { color: #d29922; } .st-D { color: #f85149; } .st-R { color: #a371f7; }
+  .fn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .pill { font-size: 10px; padding: 0 5px; border-radius: 9px; border: 1px solid; white-space: nowrap; flex: none; }
+  .nums { font: 11px ui-monospace, monospace; white-space: nowrap; flex: none; }
+  .nums .d { margin-left: 3px; }
+  .mini { font: var(--fs, 10.5px)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 0; }
+  .wide .mini { columns: 2 420px; column-gap: 0; column-rule: 1px solid #21262d; }
+  .mini .ln { white-space: pre-wrap; overflow-wrap: anywhere; padding: 0 8px 0 18px; text-indent: -10px; color: #8b949e; break-inside: avoid; } /* long lines wrap, never clip */
+  .ln.add { background: rgba(46,160,67,.15); color: #aff5b4; }
+  .ln.del { background: rgba(248,81,73,.15); color: #ffdcd7; }
+  .fold { margin: 2px 0; padding: 1px 8px; background: #121d2f; color: #6e9bd6; font: 10.5px -apple-system, sans-serif; cursor: pointer; break-inside: avoid; }
+  .fold:hover { color: #9cc3ff; }
+  .mini .note { padding: 6px 8px; font: 11px -apple-system, sans-serif; color: #8b949e; }
+
+  .banner { margin-top: 14px; border: 1px solid #a371f766; background: #a371f712; border-radius: 8px; padding: 12px 14px; }
+  .banner h4 { margin: 0 0 6px; font-size: 13px; }
+  .banner p { margin: 0 0 8px; color: #8b949e; font-size: 12px; }
+  .banner p b { color: #e6edf3; }
+  .banner .diff { border: 1px solid #30363d; border-radius: 6px; overflow: hidden; font: 11.5px/1.6 ui-monospace, monospace; background: #0d1117; }
+  .banner .diff .ln { padding: 0 10px; white-space: pre; }
+  .banner .warn { margin-top: 8px; color: #79c0ff; font-size: 12px; }
+  .banner button { margin-top: 10px; background: #238636; border: 1px solid #2ea043; color: #fff; border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: 600; }
+
+  .drawer { position: absolute; top: 0; right: 0; bottom: 0; width: min(760px, 78%); background: #0d1117; border-left: 1px solid #30363d; box-shadow: -12px 0 30px #0008; transform: translateX(105%); transition: transform .18s ease; display: grid; grid-template-rows: auto 1fr; z-index: 10; }
+  .drawer.open { transform: none; }
+  .dh { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #161b22; border-bottom: 1px solid #30363d; }
+  .dh .path { flex: 1; min-width: 0; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dh .path span { color: #8b949e; }
+  .dh button { background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 2px 9px; cursor: pointer; font-size: 12px; white-space: nowrap; }
+  .dh label { font-size: 12px; white-space: nowrap; cursor: pointer; }
+  .dbody { overflow: auto; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .dbody table { border-collapse: collapse; width: 100%; }
+  .dbody td { padding: 0 10px; white-space: pre; vertical-align: top; }
+  .dbody td.n { color: #6e7681; text-align: right; width: 1%; user-select: none; padding: 0 6px; }
+  .dbody tr.add td { background: rgba(46,160,67,.15); } .dbody tr.add td.c { color: #aff5b4; }
+  .dbody tr.del td { background: rgba(248,81,73,.15); } .dbody tr.del td.c { color: #ffdcd7; }
+  .dbody tr.hunk td { background: #121d2f; color: #8b949e; }
+
+  .scrim { position: absolute; inset: 0; background: #01040999; display: none; place-items: center; z-index: 20; }
+  .scrim.open { display: grid; }
+  .card { width: min(520px, 90%); background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 18px 20px; box-shadow: 0 20px 50px #000a; }
+  .card h3 { margin: 0 0 2px; font-size: 15px; }
+  .card .sub { color: #8b949e; font-size: 12px; margin-bottom: 14px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .kpi { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 8px 10px; }
+  .kpi .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi .l { color: #8b949e; font-size: 11px; }
+  .kpi.good .v { color: #3fb950; }
+  .card table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .card th { text-align: left; color: #8b949e; font-weight: 400; padding: 4px 0; border-bottom: 1px solid #21262d; }
+  .card td { padding: 4px 0; border-bottom: 1px solid #21262d; font-variant-numeric: tabular-nums; }
+  .card td.r, .card th.r { text-align: right; }
+  .card .fine { color: #6e7681; font-size: 11px; margin-top: 10px; }
+  .card .close { float: right; background: none; border: 0; color: #8b949e; cursor: pointer; font-size: 14px; }
+
+  .foot { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 14px; border-top: 1px solid #30363d; background: #161b22; color: #8b949e; font-size: 11.5px; }
+  kbd { font: 10.5px ui-monospace, monospace; border: 1px solid #30363d; border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; color: #e6edf3; background: #0d1117; }
+  .hint { margin-left: auto; color: #6e7681; }
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="app" id="app">
+    <header class="top">
+      <div class="pr"><span class="logo">▦ Mosaic</span><span class="repo">acme/habit-tracker <b>#410</b></span><span class="title">Move theme to @acme/design-tokens, add theme preferences</span></div>
+      <div class="prog"><div class="bar"><i id="barFill"></i></div><span id="progText"></span></div>
+      <button class="timechip" id="timeChip" title="Review time (t)">⏱ <b id="tm">0:00</b> <span id="sv"></span></button>
+      <div class="ctrls">
+        <input type="search" id="q" placeholder="Filter files  ( / )">
+        <div class="seg" id="density"><button data-d="S">S</button><button data-d="M" class="on">M</button><button data-d="L">L</button></div>
+        <label><input type="checkbox" id="hideViewed"> Hide viewed</label>
+      </div>
+    </header>
+    <div class="body">
+      <nav class="side" id="side"></nav>
+      <main class="main" id="main"></main>
+    </div>
+    <footer class="foot">
+      <span><kbd>j</kbd>/<kbd>k</kbd> next/prev</span>
+      <span><kbd>x</kbd> viewed → next unviewed</span>
+      <span><kbd>⇧X</kbd> whole folder</span>
+      <span><kbd>↵</kbd> open diff</span>
+      <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> size</span>
+      <span><kbd>v</kbd> hide viewed</span>
+      <span><kbd>t</kbd> time summary</span>
+      <span class="hint">mockup · fake data · click inside, then use keys</span>
+    </footer>
+    <aside class="drawer" id="drawer"></aside>
+    <div class="scrim" id="scrim"></div>
+  </div>
+</div>
+<script>
+// ---------- fake PR data (deterministic) ----------
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R = rng(410), pick = a => a[Math.floor(R()*a.length)], ri = (a,b) => a + Math.floor(R()*(b-a+1));
+const C = t => [' ', t], A = t => ['+', t], D = t => ['-', t];
+const files = [];
+function F(path, bucket, status, lines, extra = {}) {
+  const i = path.lastIndexOf('/');
+  files.push({ id: files.length, path, dir: path.slice(0, i), name: path.slice(i+1), bucket, status, lines,
+    add: lines.filter(l => l[0] === '+').length, del: lines.filter(l => l[0] === '-').length, ...extra });
+}
+const tok = ['colors, spacing', 'colors', 'colors, typography', 'spacing, radii', 'colors, shadows', 'typography, spacing'];
+function same(name, depth, web) {
+  const s = pick(tok), up = '../'.repeat(depth);
+  return [C("import React from 'react';"),
+    C(web ? "import styled from '@emotion/styled';" : "import { View, Text, Pressable } from 'react-native';"),
+    D(`import { ${s} } from '${up}theme';`), A(`import { ${s} } from '@acme/design-tokens';`),
+    C(''), C(`export function ${name}(props: ${name}Props) {`), C(`  const styles = useStyles(${s.split(',')[0]});`)];
+}
+// same edit + a sneaky extra change: must NOT be grouped with the identical ones
+function samePlus(name, depth, web, extra) {
+  return same(name, depth, web).concat([C(`  const { t } = useTranslation();`), C(`  const nav = useNavigation();`), C(``),
+    C(`  const onSave = useCallback(async () => {`), C(`    await save(props.values);`)], extra, [C(`  }, [props.values]);`)]);
+}
+const screens = ['Dashboard','Workouts','Journal','Habit','Reminders','Insights','Profile','Settings','Onboarding','Export'];
+const plus = {
+  Settings: [A(`    if (props.values.variant === 'dark') trackEvent('dark_mode_enabled');`), A(`    nav.goBack();`)],
+  Profile: [D(`    toast.success(t('profile.saved'));`), A(`    // toast.success(t('profile.saved'));`)],
+};
+function hook(n) {
+  const k = n.toLowerCase();
+  return [C(`export function use${n}Data(userId: string) {`),
+    D(`  const { data } = useQuery(['${k}', userId], () => fetch${n}(userId));`),
+    A(`  const prefs = useThemePrefs(userId);`),
+    A(`  const { data, isLoading, error } = useQuery({`),
+    A(`    queryKey: ['${k}', userId, prefs.goalScale],`),
+    A(`    queryFn: () => fetch${n}(userId, { scale: prefs.goalScale }),`),
+    A(`    staleTime: 60_000,`), A(`  });`),
+    C(``), C(`  const grouped = useMemo(() => {`), C(`    const byDay = new Map<string, Entry[]>();`), C(`    for (const e of data ?? []) {`),
+    C(`      const day = toDay(e.createdAt);`), C(`      byDay.set(day, [...(byDay.get(day) ?? []), e]);`), C(`    }`),
+    C(`    return byDay;`), C(`  }, [data]);`), C(``),
+    D(`  return useMemo(() => normalize(data), [data]);`),
+    A(`  if (error) reportError(error, { screen: '${n}' });`),
+    A(`  return { items: useMemo(() => normalize(data, prefs.goalScale), [data, prefs.goalScale]), grouped, isLoading };`),
+    C(`}`)];
+}
+screens.forEach(n => {
+  const d = `apps/mobile/src/screens/${n}`;
+  if (plus[n]) F(`${d}/${n}Screen.tsx`, 'review', 'M', samePlus(n + 'Screen', 3, false, plus[n]), { samePlus: plus[n].length });
+  else F(`${d}/${n}Screen.tsx`, 'identical', 'M', same(n + 'Screen', 3));
+  F(`${d}/styles.ts`, 'identical', 'M', same(n + 'Styles', 3));
+  F(`${d}/${n}Screen.test.tsx`, 'identical', 'M', same(n + 'ScreenTest', 3));
+  F(`${d}/use${n}Data.ts`, 'review', 'M', hook(n));
+});
+F('apps/mobile/src/screens/Settings/ThemeSettingsSection.tsx', 'review', 'A', [
+  `import React, { useCallback } from 'react';`, `import { View, Text, Pressable, Switch } from 'react-native';`,
+  `import { colors, spacing, typography } from '@acme/design-tokens';`, `import { useThemePrefs } from '../../hooks/useThemePrefs';`,
+  `import { useTranslation } from 'react-i18next';`, ``, `type Variant = 'light' | 'dark' | 'system';`,
+  `const VARIANTS: Variant[] = ['system', 'light', 'dark'];`, ``, `export function ThemeSettingsSection() {`,
+  `  const { t } = useTranslation();`, `  const { variant, goalScale, set, isSaving } = useThemePrefs();`, ``,
+  `  const pick = useCallback((v: Variant) => {`, `    if (v === variant) return;`, `    set({ variant: v });`, `  }, [variant, set]);`, ``,
+  `  const toggleScale = useCallback(() => {`, `    set({ goalScale: goalScale === 10 ? 5 : 10 });`, `  }, [goalScale, set]);`, ``,
+  `  return (`, `    <View style={styles.section}>`, `      <Text style={styles.heading}>{t('settings.theme.title')}</Text>`,
+  `      {VARIANTS.map((v) => (`, `        <Pressable key={v} onPress={() => pick(v)} style={styles.row}`,
+  `          accessibilityRole="radio" accessibilityState={{ checked: v === variant }}>`,
+  `          <Text style={styles.label}>{t(\`settings.theme.\${v}\`)}</Text>`, `          {v === variant && <Text style={styles.check}>✓</Text>}`,
+  `        </Pressable>`, `      ))}`, `      <View style={styles.row}>`, `        <Text style={styles.label}>{t('settings.goalScale')}</Text>`,
+  `        <Switch value={goalScale === 10} onValueChange={toggleScale} disabled={isSaving} />`, `      </View>`, `    </View>`, `  );`, `}`, ``,
+  `const styles = {`, `  section: { paddingVertical: spacing.md, gap: spacing.sm },`, `  heading: { ...typography.caption, color: colors.muted },`,
+  `  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm },`,
+  `  label: { ...typography.body, color: colors.text },`, `  check: { color: colors.primary, fontWeight: '600' },`, `} as const;`].map(A));
+const comps = ['Button','Card','Chip','Header','GoalSlider','Avatar','Modal','Tabs','Badge','Toast','ListItem','Input','Sheet','Divider'];
+comps.forEach(n => F(`apps/mobile/src/components/${n}.tsx`, 'identical', 'M', same(n, 2)));
+comps.slice(0, 10).forEach(n => F(`apps/mobile/src/components/__snapshots__/${n}.test.tsx.snap`, 'snapshot', 'M', [
+  C(`exports[\`${n} renders default 1\`] = \``), C(`<View`), C(`  style={`), C(`    Object {`),
+  D(`      "backgroundColor": "#1A73E8",`), A(`      "backgroundColor": "#1B6EF3",`),
+  C(`      "borderRadius": 12,`), D(`      "paddingHorizontal": 14,`), A(`      "paddingHorizontal": 16,`), C(`    }`)]));
+['useTheme','useColorScheme','useGoalScale'].forEach(n => F(`apps/mobile/src/hooks/${n}.ts`, 'review', 'M', [
+  C(`export function ${n}() {`), D(`  const scheme = Appearance.getColorScheme();`),
+  A(`  const { variant } = useThemePrefs();`), A(`  const system = useSystemScheme();`),
+  A(`  const scheme = variant === 'system' ? system : variant;`), C(`  return themes[scheme ?? 'light'];`), C(`}`)]));
+['useHaptics','useKeyboard','useSafeArea'].forEach(n => F(`apps/mobile/src/hooks/${n}.ts`, 'identical', 'M', same(n, 2)));
+['colors','spacing','typography','shadows','radii'].forEach(n => F(`apps/mobile/src/theme/legacy/${n}.ts`, 'deleted', 'D', [
+  D(`// Legacy ${n} — superseded by @acme/design-tokens`), D(`export const legacy${n[0].toUpperCase()+n.slice(1)} = {`),
+  D(`  primary: '#1A73E8',`), D(`  surface: '#FFFFFF',`), D(`  muted: '#5F6368',`), D(`};`)]));
+F('packages/design-tokens/src/shadows.ts', 'renamed', 'R', [], { from: 'apps/mobile/src/theme/shadows.ts' });
+F('packages/design-tokens/src/radii.ts', 'renamed', 'R', [], { from: 'apps/mobile/src/theme/radii.ts' });
+F('packages/design-tokens/src/colors.ts', 'review', 'R', [
+  C(`export const colors = {`), D(`  primary: '#1A73E8',`), A(`  primary: '#1B6EF3',`), A(`  primaryPressed: '#1557C4',`),
+  C(`  surface: '#FFFFFF',`), A(`  goalLow: '#3FB950',`), A(`  goalMid: '#D29922',`), A(`  goalHigh: '#F85149',`),
+  C(`} as const;`), A(``), A(`export const darkColors: typeof colors = {`), A(`  ...colors,`), A(`  surface: '#0D1117',`), A(`};`)],
+  { from: 'apps/mobile/src/theme/colors.ts' });
+F('packages/design-tokens/src/typography.ts', 'review', 'R', [C(`export const typography = {`),
+  D(`  body: { fontSize: 15, lineHeight: 20 },`), A(`  body: { fontSize: 16, lineHeight: 22 },`), A(`  caption: { fontSize: 12, lineHeight: 16 },`), C(`};`)],
+  { from: 'apps/mobile/src/theme/typography.ts' });
+F('packages/design-tokens/src/index.ts', 'review', 'A', [A(`export * from './colors';`), A(`export * from './spacing';`),
+  A(`export * from './typography';`), A(`export * from './shadows';`), A(`export * from './radii';`), A(`export { themes } from './themes';`)]);
+F('packages/design-tokens/src/themes.ts', 'review', 'A', [A(`import { colors, darkColors } from './colors';`), A(``),
+  A(`export const themes = {`), A(`  light: { colors, statusBar: 'dark-content' },`), A(`  dark: { colors: darkColors, statusBar: 'light-content' },`), A(`} as const;`)]);
+const models = ['Member','Checkin','Habit','Entry','Reminder','Journal','Insight','Trigger','Category','Team','Export','Session',
+  'Profile','Device','Consent','Attachment','Tag','Note','Streak','Goal','Survey','Answer','Invite','Plan','Subscription'];
+models.forEach(m => F(`packages/api-client/src/generated/models/${m}Dto.ts`, 'generated', 'M', [
+  C(`// @generated by openapi-typescript — do not edit`), C(`export interface ${m}Dto {`), C(`  id: string;`),
+  C(`  createdAt: string;`), A(`  themeVariant?: 'light' | 'dark' | 'system';`), A(`  goalScale?: 5 | 10;`), C(`}`)]));
+models.forEach(m => F(`packages/api-client/src/generated/endpoints/${m[0].toLowerCase()+m.slice(1)}.ts`, 'generated', 'M', [
+  C(`// @generated — do not edit`), C(`export const get${m} = (id: string, opts?: RequestOpts) =>`),
+  D(`  http.get<${m}Dto>(\`/v1/${m.toLowerCase()}/\${id}\`);`), A(`  http.get<${m}Dto>(\`/v1/${m.toLowerCase()}/\${id}\`, opts);`)]));
+['en','et','ru','fi','lv','lt','de','es','sv'].forEach(l => F(`apps/mobile/src/locales/${l}.json`, 'i18n', 'M', [
+  C(`  "settings.title": "…",`), A(`  "settings.theme.title": "…",`), A(`  "settings.theme.system": "…",`),
+  A(`  "settings.theme.light": "…",`), A(`  "settings.theme.dark": "…",`), C(`  "settings.language": "…",`)]));
+F('supabase/migrations/20261002120000_theme_prefs.sql', 'review', 'A', [
+  A(`create table public.theme_prefs (`), A(`  user_id uuid primary key references auth.users on delete cascade,`),
+  A(`  variant text not null default 'system' check (variant in ('light','dark','system')),`),
+  A(`  goal_scale smallint not null default 10 check (goal_scale in (5, 10)),`), A(`  updated_at timestamptz not null default now()`),
+  A(`);`), A(``), A(`alter table public.theme_prefs enable row level security;`),
+  A(`create policy "own prefs" on public.theme_prefs`), A(`  for all using (auth.uid() = user_id);`)]);
+F('supabase/functions/sync-prefs/index.ts', 'review', 'A', [A(`Deno.serve(async (req) => {`), A(`  const { variant, goalScale } = await req.json();`),
+  A(`  const user = await getUser(req);`), A(`  if (!user) return new Response('unauthorized', { status: 401 });`),
+  A(`  await db.from('theme_prefs').upsert({ user_id: user.id, variant, goal_scale: goalScale });`), A(`  return Response.json({ ok: true });`), A(`});`)]);
+F('bun.lock', 'lockfile', 'M', [C(`    "@acme/api-client": ["@acme/api-client@workspace:packages/api-client"],`),
+  A(`    "@acme/design-tokens": ["@acme/design-tokens@workspace:packages/design-tokens"],`), C(`    "@react-navigation/native": ["@react-navigation/native@7.1.6"],`)]);
+F('apps/mobile/package.json', 'review', 'M', [C(`    "@acme/api-client": "workspace:*",`), A(`    "@acme/design-tokens": "workspace:*",`)]);
+F('packages/design-tokens/package.json', 'review', 'A', [A(`{`), A(`  "name": "@acme/design-tokens",`), A(`  "version": "0.1.0",`), A(`  "main": "src/index.ts"`), A(`}`)]);
+['format','date','clamp','storage'].forEach(n => F(`apps/mobile/src/utils/${n}.ts`, 'whitespace', 'M', [
+  C(`export function ${n}(value: string) {`), D(`  return  value.trim() ;`), A(`  return value.trim();`), C(`}`)]));
+const pages = ['Home','Login','Signup','Dashboard','Entries','EntryDetail','Habits','Reminders','Insights','Reports','Teams','TeamDetail',
+  'Settings','Account','Billing','Privacy','Export','Help','NotFound','Admin'];
+pages.forEach(n => n === 'Billing'
+  ? F(`apps/web/src/pages/${n}Page.tsx`, 'review', 'M', samePlus(n + 'Page', 2, true, [D(`    if (!props.values.consent) return;`)]), { samePlus: 1 })
+  : F(`apps/web/src/pages/${n}Page.tsx`, 'identical', 'M', same(n + 'Page', 2, true)));
+const wcomps = ['Navbar','Sidebar','Footer','Table','Chart','DatePicker','Dropdown','Tooltip','Pagination','EmptyState','Spinner','Alert','Breadcrumbs','Drawer','Stepper'];
+wcomps.forEach(n => F(`apps/web/src/components/${n}.tsx`, 'identical', 'M', same(n, 2, true)));
+wcomps.slice(0, 6).forEach(n => F(`apps/web/src/components/__snapshots__/${n}.test.tsx.snap`, 'snapshot', 'M', [
+  C(`exports[\`${n} 1\`] = \``), D(`  color: #1A73E8;`), A(`  color: #1B6EF3;`), C(`\`;`)]));
+['useAuth','useThemePrefs','useFeatureFlag','useMediaQuery'].forEach((n, i) => F(`apps/web/src/hooks/${n}.ts`, i === 1 ? 'review' : 'identical', i === 1 ? 'A' : 'M',
+  i === 1 ? [A(`export function useThemePrefs() {`), A(`  const { data } = useSWR('/api/prefs', fetcher);`), A(`  const set = (p: Partial<Prefs>) => mutate('/api/prefs', post('/api/prefs', p));`),
+    A(`  return { variant: data?.variant ?? 'system', goalScale: data?.goalScale ?? 10, set };`), A(`}`)] : same(n, 2, true)));
+files.sort((a, b) => a.dir === b.dir ? a.name.localeCompare(b.name) : a.dir.localeCompare(b.dir));
+files.forEach((f, i) => f.id = i);
+const weight = f => Math.max(1, f.add + f.del);
+const TOTAL = files.reduce((s, f) => s + weight(f), 0);
+const WIDE_AT = 40;
+
+const BUCKETS = {
+  review:     { label: 'Needs review',      color: '#2f81f7' },
+  generated:  { label: 'Generated',         color: '#8b949e', pill: 'generated' },
+  snapshot:   { label: 'Snapshots',         color: '#8b949e', pill: 'snapshot' },
+  i18n:       { label: 'Translations',      color: '#8b949e', pill: 'i18n' },
+  lockfile:   { label: 'Lockfiles',         color: '#8b949e', pill: 'lockfile' },
+  renamed:    { label: 'Renamed, no edits', color: '#a371f7', pill: 'moved' },
+  deleted:    { label: 'Deleted',           color: '#f85149', pill: 'deleted' },
+  whitespace: { label: 'Whitespace only',   color: '#8b949e', pill: 'whitespace' },
+  identical:  { label: 'Same edit',         color: '#a371f7', v2: true },
+};
+const nIdentical = files.filter(f => f.bucket === 'identical').length;
+const nPlus = files.filter(f => f.samePlus).length;
+BUCKETS.identical.pill = `same ×${nIdentical}`;
+
+// ---------- state ----------
+const viewed = new Set(), expanded = new Set();
+let bulkCleared = 0;
+files.filter(f => ['lockfile', 'i18n', 'generated', 'snapshot'].includes(f.bucket)).forEach(f => { viewed.add(f.id); bulkCleared++; });
+let activeSec = 112, lastInput = Date.now();
+const BASELINE = 4.0; // min per 100 changed lines, measured on GitHub's own view (sample)
+let focusId = files.find(f => !viewed.has(f.id)).id, filterBucket = null, q = '', hideViewed = false, density = 'M', drawerId = null, summaryOpen = false;
+const DENS = { S: { tile: 230, fs: '10px' }, M: { tile: 290, fs: '10.5px' }, L: { tile: 380, fs: '11.5px' } };
+
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const visible = () => files.filter(f => (!filterBucket || f.bucket === filterBucket) && (!q || f.path.toLowerCase().includes(q)) && (!hideViewed || !viewed.has(f.id)));
+function setMany(list) {
+  const all = list.every(f => viewed.has(f.id));
+  list.forEach(f => { if (all) viewed.delete(f.id); else if (!viewed.has(f.id)) { viewed.add(f.id); bulkCleared++; } });
+}
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const hm = m => m >= 60 ? `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, '0')}m` : `${Math.round(m)} min`;
+const viewedLines = () => files.filter(f => viewed.has(f.id)).reduce((s, f) => s + weight(f), 0);
+
+// ---------- render ----------
+function renderProgress() {
+  const done = files.filter(f => viewed.has(f.id)), lines = viewedLines();
+  const left = files.filter(f => f.bucket === 'review' && !viewed.has(f.id)).length;
+  $('barFill').style.width = (100 * lines / TOTAL) + '%';
+  $('progText').innerHTML = `<b>${Math.round(100 * lines / TOTAL)}%</b> of changed lines · ${done.length}/${files.length} files · <b>${left}</b> need real review`;
+  renderTime();
+}
+function renderTime() {
+  $('tm').textContent = mmss(activeSec);
+  const saved = viewedLines() / 100 * BASELINE - activeSec / 60;
+  $('sv').innerHTML = saved >= 1 ? `· <span class="sv">~${Math.round(saved)} min saved</span>` : '';
+  if (summaryOpen) renderSummary();
+}
+function buildTree() {
+  const root = { name: '', path: '', kids: new Map(), files: [] };
+  files.forEach(f => {
+    let n = root;
+    f.dir.split('/').forEach((seg, i, arr) => {
+      const p = arr.slice(0, i + 1).join('/');
+      if (!n.kids.has(seg)) n.kids.set(seg, { name: seg, path: p, kids: new Map(), files: [] });
+      n = n.kids.get(seg);
+    });
+    n.files.push(f);
+  });
+  const all = n => n.files.concat(...[...n.kids.values()].map(all));
+  const compress = n => {
+    while (n.kids.size === 1 && n.files.length === 0 && n !== root) {
+      const k = [...n.kids.values()][0]; n.name += '/' + k.name; n.path = k.path; n.kids = k.kids; n.files = k.files;
+    }
+    n.kids.forEach(compress); n.all = all(n); return n;
+  };
+  return compress(root);
+}
+const TREE = buildTree();
+
+function renderSide() {
+  const b = Object.entries(BUCKETS).map(([k, m]) => {
+    const list = files.filter(f => f.bucket === k); if (!list.length) return '';
+    const left = list.filter(f => !viewed.has(f.id)).length;
+    return `${k === 'generated' ? '<div class="sh">Low-risk · approve in bulk</div>' : ''}${k === 'identical' ? '<div class="sh">Patterns</div>' : ''}
+      <div class="bk ${filterBucket === k ? 'on' : ''}" data-bucket="${k}"><span class="dot" style="background:${m.color}"></span>
+      <span class="lbl">${m.label}${m.v2 ? '<span class="v2">v2</span>' : ''}</span>
+      <span class="cnt ${left ? '' : 'done'}">${left ? left + '/' + list.length : '✓ ' + list.length}</span>
+      ${k !== 'review' ? `<button class="all" data-allbucket="${k}" title="Mark all viewed">✓ all</button>` : ''}</div>`;
+  }).join('');
+  const node = (n, depth) => {
+    const v = n.all.filter(f => viewed.has(f.id)).length, full = v === n.all.length;
+    return `<div class="tn ${full ? 'full' : ''}" data-prefix="${n.path}" style="padding-left:${10 + depth * 12}px">
+        <input type="checkbox" data-tree="${n.path}" ${full ? 'checked' : ''} ${v && !full ? 'data-ind="1"' : ''}>
+        <span class="nm" title="${n.path}">${n.name}</span>
+        <span class="mini-bar"><i style="width:${100 * v / n.all.length}%"></i></span><span class="c">${n.all.length}</span></div>`
+      + [...n.kids.values()].map(k => node(k, depth + 1)).join('');
+  };
+  $('side').innerHTML = `<div class="bk ${filterBucket ? '' : 'on'}" data-bucket=""><span class="dot" style="background:#e6edf3"></span><span class="lbl">All files</span><span class="cnt">${files.length}</span></div>
+    <div class="sh">Triage</div>${b}<div class="sh">Folders</div>${[...TREE.kids.values()].map(k => node(k, 0)).join('')}`;
+  $('side').querySelectorAll('[data-ind]').forEach(el => el.indeterminate = true);
+}
+
+// Every changed line is always shown. Only unchanged runs longer than 2+2 lines fold away.
+function segments(lines, ctx = 2) {
+  const out = []; let i = 0;
+  while (i < lines.length) {
+    if (lines[i][0] !== ' ') { out.push({ k: i }); i++; continue; }
+    let j = i; while (j < lines.length && lines[j][0] === ' ') j++;
+    const before = i === 0 ? 0 : ctx, after = j === lines.length ? 0 : ctx;
+    if (j - i > before + after + 1) {
+      for (let k = i; k < i + before; k++) out.push({ k });
+      out.push({ fold: [i + before, j - after] });
+      for (let k = j - after; k < j; k++) out.push({ k });
+    } else for (let k = i; k < j; k++) out.push({ k });
+    i = j;
+  }
+  return out;
+}
+const lnHtml = ([t, s]) => `<div class="ln ${t === '+' ? 'add' : t === '-' ? 'del' : ''}">${t}${esc(s) || ' '}</div>`;
+function miniLines(f) {
+  if (f.status === 'R' && !f.lines.length) return `<div class="note">→ moved from <span class="mono">${esc(f.from)}</span> · no content changes</div>`;
+  return segments(f.lines).map(s => {
+    if (s.k != null) return lnHtml(f.lines[s.k]);
+    const key = `${f.id}:${s.fold[0]}`, n = s.fold[1] - s.fold[0];
+    return expanded.has(key) ? f.lines.slice(s.fold[0], s.fold[1]).map(lnHtml).join('')
+      : `<div class="fold" data-fold="${key}">⋯ ${n} unchanged line${n > 1 ? 's' : ''} — expand</div>`;
+  }).join('');
+}
+function tile(f) {
+  const m = BUCKETS[f.bucket];
+  const pill = f.samePlus ? `<span class="pill" style="color:#79c0ff;border-color:#79c0ff66">same edit +${f.samePlus}</span>`
+    : m.pill ? `<span class="pill" style="color:${m.color};border-color:${m.color}66">${m.pill}</span>` : '';
+  return `<div class="tile ${f.add + f.del > WIDE_AT ? 'wide' : ''} ${viewed.has(f.id) ? 'viewed' : ''} ${focusId === f.id ? 'focus' : ''}" data-id="${f.id}">
+    <div class="th"><input type="checkbox" class="vchk" ${viewed.has(f.id) ? 'checked' : ''} title="Viewed (x)">
+      <span class="st st-${f.status}">${f.status}</span><span class="fn" title="${f.path}">${f.name}</span>${pill}
+      <span class="nums"><span class="a">+${f.add}</span><span class="d">−${f.del}</span></span></div>
+    <div class="mini">${miniLines(f)}</div></div>`;
+}
+function renderMain() {
+  const main = $('main'), top = main.scrollTop, vis = visible();
+  let html = '';
+  if (filterBucket === 'identical') {
+    const left = files.filter(f => f.bucket === 'identical' && !viewed.has(f.id)).length;
+    html += `<div class="banner"><h4>One edit, ${nIdentical} files <span class="v2">v2</span></h4>
+      <p><b>${nIdentical} files are exactly this edit</b> after normalising imported names, with <b>0 other changed lines</b>. Review it once, approve all.</p>
+      <div class="diff"><div class="ln del">-import { ‹names› } from '‹../›theme';</div><div class="ln add">+import { ‹names› } from '@acme/design-tokens';</div></div>
+      <div class="warn">ⓘ ${nPlus} more files contain this edit <b>plus other changes</b> — they stay in Needs review, marked “same edit +N”.</div>
+      <button data-allbucket="identical">${left ? `✓ Approve all ${left} remaining` : 'Undo approve all'}</button></div>`;
+  }
+  const groups = new Map(); vis.forEach(f => { if (!groups.has(f.dir)) groups.set(f.dir, []); groups.get(f.dir).push(f); });
+  groups.forEach((list, dir) => {
+    const dirFiles = files.filter(f => f.dir === dir), v = dirFiles.filter(f => viewed.has(f.id)).length, full = v === dirFiles.length;
+    const a = dirFiles.reduce((s, f) => s + f.add, 0), d = dirFiles.reduce((s, f) => s + f.del, 0), cut = dir.lastIndexOf('/');
+    html += `<section class="sec ${full ? 'done' : ''}" data-dir="${dir}"><div class="sec-h">
+      <input type="checkbox" data-folder="${dir}" ${full ? 'checked' : ''} ${v && !full ? 'data-ind="1"' : ''} title="Mark folder viewed (⇧X)">
+      <span class="p"><span>${dir.slice(0, cut + 1)}</span>${dir.slice(cut + 1)}</span>
+      <span class="m">${v}/${dirFiles.length} viewed · <span class="a">+${a}</span> <span class="d">−${d}</span></span></div>
+      <div class="grid">${list.map(tile).join('')}</div></section>`;
+  });
+  if (!vis.length) html += `<p style="color:#8b949e;margin-top:30px;text-align:center">Nothing left here 🎉</p>`;
+  main.innerHTML = html;
+  main.querySelectorAll('[data-ind]').forEach(el => el.indeterminate = true);
+  masonry(); main.scrollTop = top;
+}
+function masonry() {
+  document.querySelectorAll('.grid .tile').forEach(t => { t.style.gridRowEnd = `span ${Math.ceil((t.getBoundingClientRect().height + 8) / 2)}`; });
+}
+function renderDrawer() {
+  const dr = $('drawer');
+  if (drawerId == null) { dr.classList.remove('open'); return; }
+  const f = files[drawerId]; let o = 10 + (f.id * 7) % 70, n = o;
+  const rows = f.lines.length ? [`<tr class="hunk"><td class="n"></td><td class="n"></td><td class="c">@@ -${o},${f.lines.length - f.add} +${n},${f.lines.length - f.del} @@</td></tr>`]
+    .concat(f.lines.map(([t, s]) => {
+      const a = t === '+' ? '' : o++, b = t === '-' ? '' : n++;
+      return `<tr class="${t === '+' ? 'add' : t === '-' ? 'del' : ''}"><td class="n">${a}</td><td class="n">${b}</td><td class="c">${t}${esc(s)}</td></tr>`;
+    })).join('') : `<tr><td class="c" style="color:#8b949e;padding:14px">Renamed from ${esc(f.from)} — no content changes.</td></tr>`;
+  const cut = f.path.lastIndexOf('/');
+  dr.innerHTML = `<div class="dh"><span class="st st-${f.status}">${f.status}</span>
+      <span class="path mono"><span>${f.path.slice(0, cut + 1)}</span>${f.name}</span>
+      <label><input type="checkbox" class="vchk" data-id="${f.id}" ${viewed.has(f.id) ? 'checked' : ''}> Viewed <kbd>x</kbd></label>
+      <button data-act="comment">Comment on GitHub ↗</button><button data-act="close">✕</button></div>
+    <div class="dbody"><table>${rows}</table></div>`;
+  dr.classList.add('open');
+}
+function renderSummary() {
+  const sc = $('scrim');
+  if (!summaryOpen) { sc.classList.remove('open'); return; }
+  const lines = viewedLines(), est = lines / 100 * BASELINE, spent = activeSec / 60, saved = est - spent;
+  const done = viewed.size === files.length;
+  sc.innerHTML = `<div class="card"><button class="close" data-act="sum-close">✕</button>
+    <h3>${done ? 'Review complete · #410' : 'Review so far · #410'}</h3>
+    <div class="sub">${viewed.size}/${files.length} files · ${lines}/${TOTAL} changed lines</div>
+    <div class="kpis">
+      <div class="kpi"><div class="v">${mmss(activeSec)}</div><div class="l">active time in Mosaic</div></div>
+      <div class="kpi"><div class="v">${hm(est)}</div><div class="l">your GitHub pace for the same lines</div></div>
+      <div class="kpi ${saved > 0 ? 'good' : ''}"><div class="v">${saved > 0 ? '−' + hm(saved) : '—'}</div><div class="l">${saved > 0 ? 'saved' : 'not ahead yet'}</div></div>
+    </div>
+    <table><tr><th>Where the time went</th><th class="r">files</th><th class="r">lines</th></tr>
+      <tr><td>Cleared in bulk (buckets, folders)</td><td class="r">${bulkCleared}</td><td class="r">${files.filter(f => viewed.has(f.id) && f.bucket !== 'review').reduce((s, f) => s + weight(f), 0)}</td></tr>
+      <tr><td>Read one by one (Needs review)</td><td class="r">${files.filter(f => viewed.has(f.id) && f.bucket === 'review').length}</td><td class="r">${files.filter(f => viewed.has(f.id) && f.bucket === 'review').reduce((s, f) => s + weight(f), 0)}</td></tr>
+    </table>
+    <table style="margin-top:12px"><tr><th>This week</th><th class="r">files</th><th class="r">Mosaic</th><th class="r">GitHub pace</th><th class="r">saved</th></tr>
+      <tr><td>#402 add team export</td><td class="r">61</td><td class="r">22 min</td><td class="r">49 min</td><td class="r a">−27 min</td></tr>
+      <tr><td>#398 fix reminder tz</td><td class="r">12</td><td class="r">9 min</td><td class="r">11 min</td><td class="r a">−2 min</td></tr>
+      <tr><td>#391 RN 0.82 upgrade</td><td class="r">233</td><td class="r">31 min</td><td class="r">1h 34m</td><td class="r a">−1h 03m</td></tr>
+    </table>
+    <div class="fine">GitHub pace = ${BASELINE} min per 100 changed lines, measured on 6 PRs you reviewed in GitHub's own Files view.
+      Active time pauses after 60 s without input or when the tab is hidden. Stored locally only. (Numbers here are sample data.)</div></div>`;
+  sc.classList.add('open');
+}
+function render() { renderProgress(); renderSide(); renderMain(); renderDrawer(); renderSummary(); }
+
+// ---------- interaction ----------
+function moveFocus(dir, onlyUnviewed) {
+  const vis = visible(); if (!vis.length) return;
+  let i = vis.findIndex(f => f.id === focusId);
+  for (let step = 0; step < vis.length; step++) {
+    i = (i + dir + vis.length) % vis.length;
+    if (!onlyUnviewed || !viewed.has(vis[i].id)) break;
+  }
+  focusId = vis[i].id; if (drawerId != null) drawerId = focusId;
+  render(); document.querySelector(`.tile[data-id="${focusId}"]`)?.scrollIntoView({ block: 'nearest' });
+}
+function toggleOne(id) {
+  if (viewed.has(id)) { viewed.delete(id); render(); } else { viewed.add(id); focusId = id; maybeDone(); moveFocus(1, true); }
+}
+function maybeDone() { if (viewed.size === files.length) summaryOpen = true; }
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('[data-act="sum-close"]') || t.id === 'scrim') { summaryOpen = false; render(); return; }
+  if (t.closest('#timeChip')) { summaryOpen = !summaryOpen; render(); return; }
+  if (t.dataset.fold) { expanded.add(t.dataset.fold); render(); return; }
+  if (t.dataset.allbucket) { setMany(files.filter(f => f.bucket === t.dataset.allbucket)); maybeDone(); render(); return; }
+  if (t.dataset.folder) { setMany(files.filter(f => f.dir === t.dataset.folder)); maybeDone(); render(); return; }
+  if (t.dataset.tree != null) { setMany(files.filter(f => f.path.startsWith(t.dataset.tree + '/'))); maybeDone(); render(); return; }
+  if (t.classList.contains('vchk')) { toggleOne(+(t.dataset.id ?? t.closest('.tile').dataset.id)); return; }
+  if (t.closest('[data-act="close"]')) { drawerId = null; render(); return; }
+  const bk = t.closest('.bk'); if (bk) { filterBucket = bk.dataset.bucket || null; $('main').scrollTop = 0; render(); return; }
+  const tn = t.closest('.tn');
+  if (tn) { const s = [...document.querySelectorAll('.sec')].find(s => s.dataset.dir === tn.dataset.prefix || s.dataset.dir.startsWith(tn.dataset.prefix + '/')); s?.scrollIntoView({ block: 'start' }); return; }
+  const tl = t.closest('.tile'); if (tl) { focusId = drawerId = +tl.dataset.id; render(); }
+});
+$('density').addEventListener('click', e => { const d = e.target.dataset.d; if (d) setDensity(d); });
+function setDensity(d) {
+  density = d; document.querySelectorAll('#density button').forEach(b => b.classList.toggle('on', b.dataset.d === d));
+  $('app').style.setProperty('--tile', DENS[d].tile + 'px'); $('app').style.setProperty('--fs', DENS[d].fs); render();
+}
+$('hideViewed').addEventListener('change', e => { hideViewed = e.target.checked; render(); });
+$('q').addEventListener('input', e => { q = e.target.value.toLowerCase(); render(); });
+document.addEventListener('keydown', e => {
+  lastInput = Date.now();
+  if (e.target.tagName === 'INPUT' && e.target.type === 'search') { if (e.key === 'Escape') e.target.blur(); return; }
+  const k = e.key;
+  if (k === 'j') moveFocus(1); else if (k === 'k') moveFocus(-1);
+  else if (k === 'x') toggleOne(focusId);
+  else if (k === 'X') { const f = files[focusId]; setMany(files.filter(g => g.dir === f.dir)); maybeDone(); moveFocus(1, true); }
+  else if (k === 'Enter') { drawerId = focusId; render(); }
+  else if (k === 'Escape') { drawerId = null; summaryOpen = false; render(); }
+  else if (k === '1' || k === '2' || k === '3') setDensity('SML'[+k - 1]);
+  else if (k === 'v') { hideViewed = !hideViewed; $('hideViewed').checked = hideViewed; render(); }
+  else if (k === 't') { summaryOpen = !summaryOpen; render(); }
+  else if (k === '/') { e.preventDefault(); $('q').focus(); }
+  else return;
+  e.preventDefault();
+});
+['mousemove', 'mousedown', 'wheel'].forEach(ev => document.addEventListener(ev, () => lastInput = Date.now(), { passive: true }));
+setInterval(() => { if (!document.hidden && Date.now() - lastInput < 60000) { activeSec++; renderTime(); } }, 1000);
+addEventListener('resize', masonry);
+if (location.protocol === 'file:') {
+  document.documentElement.classList.add('standalone');
+  const fit = () => document.querySelector('.screen').style.height = innerHeight + 'px'; fit(); addEventListener('resize', fit);
+}
+setDensity('M');
+console.log('files', files.length, 'identical', nIdentical, 'samePlus', nPlus, 'review', files.filter(f => f.bucket === 'review').length, 'total lines', TOTAL);
+</script>
+</body>
+</html>

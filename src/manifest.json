@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Mosaic — review huge PRs",
+  "description": "Review big GitHub pull requests as a tiled mosaic: every diff at once, low-risk files in bulk, viewed state synced with GitHub.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://patch-diff.githubusercontent.com/*",
+    "https://raw.githubusercontent.com/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    { "matches": ["https://github.com/*"], "js": ["page-hook.js"], "run_at": "document_start", "world": "MAIN" },
+    { "matches": ["https://github.com/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ],
+  "web_accessible_resources": [{ "resources": ["ui.js"], "matches": ["https://github.com/*"] }],
+  "commands": {
+    "toggle-mosaic": {
+      "suggested_key": { "default": "Alt+Shift+M" },
+      "description": "Open or close Mosaic on a pull request"
+    }
+  },
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" }
+}
