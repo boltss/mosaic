@@ -354,6 +354,37 @@ export function useViewed(
   return { isViewed, setViewed, saving: mutation.isPending };
 }
 
+/** Who has approved and whether the viewer may, plus the approve action itself. */
+export function useApproval(
+  source: ReviewSource,
+  pullRequest: PullRequest | undefined,
+  callbacks: { onApproved: () => void; onFailed: (error: Error, retry: () => void) => void },
+) {
+  const status = useQuery({
+    queryKey: ['reviewStatus'],
+    queryFn: () => source.loadReviewStatus(pullRequest!),
+    enabled: !!pullRequest,
+    staleTime: Infinity,
+    retry: 1,
+  });
+  // Approve the head the files were loaded at, so GitHub refuses rather than approving commits nobody saw.
+  const reviewedHead = pullRequest?.headCommitId ?? status.data?.headCommitId ?? null;
+  const currentHead = status.data?.headCommitId;
+  const mutation = useMutation({
+    mutationFn: (headCommitId: string) => source.approve(pullRequest!, headCommitId),
+    onSuccess: () => callbacks.onApproved(),
+    onError: (error, headCommitId) => callbacks.onFailed(error, () => mutation.mutate(headCommitId)),
+  });
+  return {
+    status: status.data,
+    headMoved: !!reviewedHead && !!currentHead && reviewedHead !== currentHead,
+    submitting: mutation.isPending || mutation.isSuccess,
+    approve: () => {
+      if (reviewedHead) mutation.mutate(reviewedHead);
+    },
+  };
+}
+
 const contentSlots = semaphore(4);
 
 export const isImagePath = (path: string) => /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i.test(path);

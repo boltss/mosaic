@@ -2,11 +2,12 @@
 // gives us is checked against the schemas in schemas.ts; anything unexpected throws GitHubShapeError
 // naming the exact field, so the UI can say "GitHub changed something" instead of rendering wrong data.
 import type * as zod from 'zod';
-import type { DiffLine, FileDiff, FileStatus, FileSummary, LineKind } from '../shared/types.ts';
+import type { Approval, DiffLine, FileDiff, FileStatus, FileSummary, LineKind, ReviewStatus } from '../shared/types.ts';
 import {
   changesPageSchema,
   diffEntriesSchema,
   embeddedPayloadSchema,
+  layoutPageSchema,
   type DiffEntryLine,
   type EmbeddedPayload,
 } from './schemas.ts';
@@ -111,6 +112,47 @@ export function parseChangesRoute(html: string): ChangesRoute {
     range: route.comparison?.range ?? headCommitId,
     headCommitId,
     baseCommitId,
+  };
+}
+
+const userLogin = (html: string) => html.match(/<meta name="user-login" content="([^"]*)"/)?.[1] ?? '';
+
+/**
+ * Parse the conversation page: whether the viewer may approve (from the embedded layout payload) and
+ * who already has (from the Reviewers sidebar, where each approval is a link to the commit it was
+ * given on with an "<login> approved these changes" tooltip).
+ */
+export function parseReviewStatus(html: string): ReviewStatus {
+  const page = embeddedPayloads(html).find(
+    payload => isRecord(payload.payload) && isRecord(payload.payload.pullRequestsLayoutRoute),
+  );
+  if (!page) {
+    if (!userLogin(html)) throw new NotLoggedInError();
+    throw new GitHubShapeError('no pullRequestsLayoutRoute in the conversation page');
+  }
+  const { pullRequest } = parseShape(layoutPageSchema, page, 'conversation page').payload.pullRequestsLayoutRoute;
+  const headCommitId = pullRequest.headSha ?? null;
+  const viewer = userLogin(html).toLowerCase();
+  const tooltips = new Map(
+    [...html.matchAll(/<tool-tip\b[^>]*\bfor="review-status-([^"]+)"[^>]*>([^<]*)</g)].map(([, login, text]) => [
+      login!,
+      text!,
+    ]),
+  );
+  const approvals: Approval[] = [];
+  for (const [link, login] of html.matchAll(/<a\b[^>]*\bid="review-status-([^"]+)"[^>]*>/g)) {
+    if (!tooltips.get(login!)?.includes('approved these changes')) continue;
+    const commitId = link.match(/href="[^"]*\/files\/([0-9a-f]{40})"/)?.[1];
+    approvals.push({
+      login: login!,
+      isViewer: login!.toLowerCase() === viewer,
+      stale: !!commitId && !!headCommitId && commitId !== headCommitId,
+    });
+  }
+  return {
+    canApprove: pullRequest.viewerAllowedNonCommentReviewTypes.includes('APPROVE'),
+    headCommitId,
+    approvals,
   };
 }
 

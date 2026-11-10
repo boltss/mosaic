@@ -63,7 +63,17 @@ async function openMosaic() {
       background: askBackground,
       nonce: () => document.querySelector<HTMLMetaElement>('meta[name="fetch-nonce"]')?.content ?? null,
     });
-    unmount = ui.mountMosaic(ownHost, { source, store: chromeStore, theme: theme(), onClose: closeMosaic });
+    unmount = ui.mountMosaic(ownHost, {
+      source,
+      store: chromeStore,
+      theme: theme(),
+      onClose: closeMosaic,
+      // A full load, so the conversation shows the new review.
+      onApproved: () => {
+        closeMosaic();
+        location.assign(`/${reference.owner}/${reference.repository}/pull/${reference.number}`);
+      },
+    });
     parkGitHub(true);
   } catch (error) {
     console.error('[Mosaic] failed to open', error);

@@ -72,6 +72,23 @@ export type FileSide = zod.infer<typeof fileSideSchema>;
 export const loadedImageSchema = zod.object({ url: zod.string(), bytes: zod.number() });
 export type LoadedImage = zod.infer<typeof loadedImageSchema>;
 
+export const approvalSchema = zod.object({
+  login: zod.string(),
+  isViewer: zod.boolean(),
+  /** Given on an earlier commit than the current head. */
+  stale: zod.boolean(),
+});
+export type Approval = zod.infer<typeof approvalSchema>;
+
+export const reviewStatusSchema = zod.object({
+  /** GitHub lets the viewer approve: not their own pull request, still open, and they have access. */
+  canApprove: zod.boolean(),
+  /** The pull request head right now; differs from the reviewed head when commits were pushed since. */
+  headCommitId: zod.string().nullable(),
+  approvals: zod.array(approvalSchema),
+});
+export type ReviewStatus = zod.infer<typeof reviewStatusSchema>;
+
 /** Everything the UI needs from a code host. GitHub session adapter and the dev harness implement it. */
 export interface ReviewSource {
   loadPullRequest(): Promise<PullRequestOverview>;
@@ -85,6 +102,10 @@ export interface ReviewSource {
   loadFileContent(pullRequest: PullRequest, path: string, side: FileSide): Promise<string | null>;
   /** An image file at one side of the pull request as something an <img> can show; null when it does not exist. */
   loadImage(pullRequest: PullRequest, path: string, side: FileSide): Promise<LoadedImage | null>;
+  /** Whether the viewer may approve, and who already has. */
+  loadReviewStatus(pullRequest: PullRequest): Promise<ReviewStatus>;
+  /** Submit an approving review of `headCommitId`; GitHub refuses it if the head has moved on. */
+  approve(pullRequest: PullRequest, headCommitId: string): Promise<void>;
   /** URL of a file at the pull request head, for links/images in previews. */
   blobUrl(pullRequest: PullRequest, path: string, kind: 'blob' | 'raw'): string;
   githubUrl(pullRequest: PullRequest, path?: string): string;
